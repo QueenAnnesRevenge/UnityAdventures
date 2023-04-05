@@ -1,5 +1,8 @@
-using System;
+using PlayFab;
+using PlayFab.ClientModels;
 using UnityEngine;
+using System;
+
 
 public static class PlayfabAuth
 {
@@ -10,13 +13,13 @@ public static class PlayfabAuth
 
     // Getter
     public static bool IsLoggedIn
+{
+    get
     {
-        get
-        {
-            // TODO: Implement check that we are logged in
-            return false;
-        }
+        return PlayFabClientAPI.IsClientLoggedIn();
     }
+}
+
 
     // Functions
     public static void TryRegisterWithEmail(string email, string password, Action registerResultCallback, Action errorCallback)
@@ -25,20 +28,54 @@ public static class PlayfabAuth
     }
 
     public static void TryRegisterWithEmail(string email, string password, string username, Action registerResultCallback, Action errorCallback)
+{
+    var request = new RegisterPlayFabUserRequest
     {
-        // TODO: Request playfab for registration
-        // --------------------------------------
-        // >> For the moment, we will consider it to be a succes
+        Email = email,
+        Password = password,
+        Username = username
+    };
+
+    PlayFabClientAPI.RegisterPlayFabUser(request, result =>
+    {
+        // Save email/password to PlayerPrefs
+        PlayerPrefs.SetString(PlayfabAuthPlayerPrefsKeyEmail, email);
+        PlayerPrefs.SetString(PlayfabAuthPlayerPrefsKeyPassword, password);
+        PlayerPrefs.SetString(PlayfabAuthPlayerPrefsKeyUsername, username);
+
+        // Callback
         registerResultCallback.Invoke();
-    }
+    }, error =>
+    {
+        // Callback
+        errorCallback.Invoke();
+    });
+}
+
 
     public static void TryLoginWithEmail(string email, string password, Action loginResultCallback, Action errorCallback)
     {
-        // TODO: Request playfab for login
-        // -------------------------------
-        // >> For the moment, we will consider it to be a success
+    var request = new LoginWithEmailAddressRequest
+    {
+        Email = email,
+        Password = password
+    };
+
+    PlayFabClientAPI.LoginWithEmailAddress(request, result =>
+    {
+        // Save email/password to PlayerPrefs
+        PlayerPrefs.SetString(PlayfabAuthPlayerPrefsKeyEmail, email);
+        PlayerPrefs.SetString(PlayfabAuthPlayerPrefsKeyPassword, password);
+
+        // Callback
         loginResultCallback.Invoke();
+    }, error =>
+    {
+        // Callback
+        errorCallback.Invoke();
+    });
     }
+
 
     // Logout
     public static void Logout(Action logoutResultCallback, Action errorCallback)
