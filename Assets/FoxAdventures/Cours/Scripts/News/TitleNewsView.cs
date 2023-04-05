@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using PlayFab;
+using PlayFab.ClientModels;
 
 [System.Serializable]
 public class TitleNewsViewEntry
@@ -49,61 +51,76 @@ public class TitleNewsView : MonoBehaviour
     }
 
     public void ShowLatestNews()
+{
+    
+    // Trigger news show if logged in
+    if (PlayfabAuth.IsLoggedIn == true)
     {
-        // Trigger news show if logged in
-        if (PlayfabAuth.IsLoggedIn == true)
+        
+        // Request playfab to retrieve the latest news
+        PlayFabClientAPI.GetTitleNews(new GetTitleNewsRequest(), OnGetTitleNewsSuccess, OnGetTitleNewsError);
+    }
+}
+
+private void OnGetTitleNewsSuccess(GetTitleNewsResult result)
+{
+    // Fill data of the list
+    List<TitleNewsViewEntry> news = new List<TitleNewsViewEntry>();
+    foreach (var item in result.News)
+    {
+        // Convert timestamp to DateTime
+        DateTime dateTime = item.Timestamp.ToLocalTime();
+        news.Add(new TitleNewsViewEntry()
         {
-            // TODO: Request playfab to retrieve the latest news
-            this.OnGetTitleNewsSuccess();       // Fake
-        }
+            title = item.Title,
+            body = item.Body,
+            displayedDate = dateTime
+        });
     }
 
-    private void OnGetTitleNewsSuccess()
+    // News found
+    if (news != null && news.Count > 0)
     {
-        // Fill data of the list
-        List<TitleNewsViewEntry> news = new List<TitleNewsViewEntry>();
-
-        // News found
-        if (news != null && news.Count > 0)
+       
+        // Update Content
+        if (this.contentText != null)
         {
-            // Update Content
-            if (this.contentText != null)
+            string newsContent = string.Empty;
+            for (int i = 0; i < news.Count; i++)
             {
-                string newsContent = string.Empty;
-                for (int i = 0; i < news.Count; i++)
-                {
-                    if (string.IsNullOrWhiteSpace(newsContent) == false)
-                        newsContent += "\n\n";
+                if (string.IsNullOrWhiteSpace(newsContent) == false)
+                    newsContent += "\n\n";
 
-                    // Fill content with our news
-                    newsContent += "- " + news[i].DisplayedDateStr + " -";
-                    newsContent += "\n<color=orange>" + news[i].title + "</color>";
-                    newsContent += "\n" + news[i].body;
-                }
-
-                // Update view
-                this.contentText.text = newsContent;
+                // Fill content with our news
+                newsContent += "- " + news[i].DisplayedDateStr + " -";
+                newsContent += "\n<color=orange>" + news[i].title + "</color>";
+                newsContent += "\n" + news[i].body;
             }
 
-            // Show
-            this.ShowView();
+            // Update view
+            this.contentText.text = newsContent;
         }
-        // No news
-        else
-        {
-            // Hide view immediately
-            this.HideView();
-        }
+
+        // Show
+        this.ShowView();
     }
-
-    private void OnGetTitleNewsError()
+    // No news
+    else
     {
-        // Log
-        Debug.LogError("TitleNewsView.OnGetTitleNewsError() - Error: TODO");
-
         // Hide view immediately
         this.HideView();
     }
+}
+
+private void OnGetTitleNewsError(PlayFabError error)
+{
+    // Log
+    Debug.LogError("TitleNewsView.OnGetTitleNewsError() - Error: " + error.GenerateErrorReport());
+
+    // Hide view immediately
+    this.HideView();
+}
+
 
 
     // Show / Hide content root
