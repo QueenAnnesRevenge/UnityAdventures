@@ -39,6 +39,7 @@ public class FoxCharacterWinScreenLeaderboard : FoxCharacterWinScreenAddCrystals
         Debug.LogError("Leaderboard update failed: " + error.ErrorMessage);
     }
 
+/** this version works to add both stats on leaderboards but updates every time even when not neeeded
     private void UpdateLeaderboard(string leaderboardName, int score)
     {
         var request = new UpdatePlayerStatisticsRequest
@@ -54,5 +55,38 @@ public class FoxCharacterWinScreenLeaderboard : FoxCharacterWinScreenAddCrystals
         };
 
         PlayFabClientAPI.UpdatePlayerStatistics(request, OnUpdatePlayerStatisticsRequestSuccess, OnUpdatePlayerStatisticsRequestError);
+    }
+**/
+//this one updates well when neccesary but does not create
+private void UpdateLeaderboard(string leaderboardName, int score)
+    {
+        PlayFabClientAPI.GetPlayerStatistics(new GetPlayerStatisticsRequest
+        {
+            StatisticNames = new List<string> { leaderboardName }
+        }, result =>
+        {
+            int existingScore = 0;
+            if (result.Statistics.Count > 0)
+            {
+                existingScore = result.Statistics[0].Value;
+            }
+
+            if (score > existingScore)
+            {
+                var request = new UpdatePlayerStatisticsRequest
+                {
+                    Statistics = new List<StatisticUpdate>
+                    {
+                        new StatisticUpdate
+                        {
+                            StatisticName = leaderboardName,
+                            Value = score
+                        }
+                    }
+                };
+
+                PlayFabClientAPI.UpdatePlayerStatistics(request, OnUpdatePlayerStatisticsRequestSuccess, OnUpdatePlayerStatisticsRequestError);
+            }
+        }, OnUpdatePlayerStatisticsRequestError);
     }
 }
