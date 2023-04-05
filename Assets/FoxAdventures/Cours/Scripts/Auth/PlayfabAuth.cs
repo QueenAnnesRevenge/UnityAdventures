@@ -16,7 +16,7 @@ public static class PlayfabAuth
 {
     get
     {
-        return PlayFabClientAPI.IsClientLoggedIn();
+        return PlayFab.PlayFabClientAPI.IsClientLoggedIn();
     }
 }
 
